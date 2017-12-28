@@ -1,0 +1,89 @@
+---
+title: "SVM"
+author: "Ranjeeta"
+date: "12/28/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+```{r}
+set.seed(12)
+x1 = runif(100,min=0, max=100)
+x2 = runif(100,min =0, max=100)
+
+bound= function(x){
+    50 + ( x-2*(x-20)+ 3*(x-50)^3)/8000
+}
+
+y= ifelse(x2 > bound(x1),1,0)
+plot(x1,x2, pch=19,cex=0.7,col= y+1,xlab=expression(X[1]), ylab= expression(X[2]))
+points(sort(x1),bound(sort(x1)),type ="l", col ="Green")
+df = data.frame(y=as.factor(y),x1=x1,x2=x2)
+```
+
+#using the SVM
+
+
+```{r}
+
+library(e1071)
+svm.fit.1= svm(y~., data=df, kernel="linear",cost=1,scale=FALSE)
+svm.fit.1
+
+plot(svm.fit.1,df)
+
+
+table(Actual =y,predicted =predict(svm.fit.1,df))
+
+TP= 37
+TN=58
+FP=2
+FN=3
+Accuracy = (TP+TN)/(TP+FP+TN+FN)
+print(Accuracy)
+sensitivity = TP/(TP+ FN)
+print(sensitivity)
+specificity = TN/(TN + FP)
+print(specificity)
+precision = TP/(TP + FP)
+print(precision)
+```
+
+Changing the value of cost
+
+```{r}
+svm.fit.2 = svm(y~., data = df, kernel="linear",cost = 10,scale =FALSE)
+svm.fit.2
+table(Actual =y,predicted =predict(svm.fit.2,df))
+
+
+svm.fit.3 = svm(y~., data = df, kernel="linear",cost = 0.01,gamma = 0.6,scale =FALSE)
+
+table(Actual =y,predicted =predict(svm.fit.3,df))
+svm.fit.3$index
+```
+
+
+Using the tune function 
+
+```{r}
+set.seed(1)
+tune.out = tune(svm, y~.,data=df, kernel="linear",
+                ranges= list(cost = c(0.001,0.01,0.1,1,5,10,100)))
+summary(tune.out)
+
+```
+
+We see the best performance is when cost =1, the lowest cross validation error of 0.06. The tune() function storesthe best model obtained.
+
+```{r}
+bestmodel = tune.out$best.model
+
+summary(bestmodel)
+
+```
